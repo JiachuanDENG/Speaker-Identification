@@ -1,7 +1,7 @@
 ***Author***: Jiachuan Deng
 
 ### Goal
-Experimental codes for building a real time one-shot deep learning speaker identification system.
+On-going project experimental codes for building a real time one-shot deep learning speaker identification system.
 
 ### File Structure
 ``` bash
