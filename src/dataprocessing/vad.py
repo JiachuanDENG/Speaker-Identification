@@ -137,9 +137,9 @@ def vad_collector(sample_rate, frame_duration_ms,
 # def resampleAndSegment(wavfile,targetSr,targetLen):
 
 def main(args):
-    if len(args) != 3:
+    if len(args) != 4:
         sys.stderr.write(
-            'Usage: example.py <aggressiveness> <target sample rate> <target dir> \n')
+            'Usage: example.py <aggressiveness> <target sample rate>  <original audio dir> <target dir> \n')
         sys.exit(1)
     # datafile structure:
         # voxdata
@@ -151,8 +151,8 @@ def main(args):
         #         | ksiudhahi  
         #           | 0.wav
         #     ...    
-    voxdata='../../data/voxdata'
-    voxVadData=args[2]#'../../data/voxVadData'
+    voxdata=argsp[2]
+    voxVadData=args[3]#'../../data/voxVadData'
     os.system('mkdir {}'.format(voxVadData))
     sr=int(args[1])
     for idDir in tqdm(os.listdir(voxdata)):
