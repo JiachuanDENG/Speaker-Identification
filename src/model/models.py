@@ -6,12 +6,9 @@ import torch.optim as optim
 
 
 class EncoderNetClassifier(nn.Module):
-	def __init__(self,speakersNum=19):
+	def __init__(self,embedding_size=128,speakersNum=19):
 		super(EncoderNetClassifier, self).__init__()
-
-		################
-		### Method 1 ###
-		################
+		self.embedding_size=embedding_size
 		self.speakersNum=speakersNum
 		self.conv11 = nn.Conv3d(1, 8, (3, 7, 7), stride=(1, 2, 1))
 		self.conv11_bn = nn.BatchNorm3d(8)
@@ -38,10 +35,10 @@ class EncoderNetClassifier(nn.Module):
 
 
 		# Fully-connected
-		self.fc1 = nn.Linear(32 * 3* 1 * 18, 128) # input size (Batchsize,1,10,40,40)
-		self.fc1_bn = nn.BatchNorm1d(128)
+		self.fc1 = nn.Linear(32 * 3* 1 * 18, self.embedding_size) # input size (Batchsize,1,10,40,40)
+		self.fc1_bn = nn.BatchNorm1d(self.embedding_size)
 		self.fc1_activation = torch.nn.PReLU()
-		self.fc2 = nn.Linear(128, speakersNum)
+		self.fc2 = nn.Linear(self.embedding_size ,self.speakersNum)
 
 	def getFeature(self,x):
 		# Method-1
@@ -62,6 +59,20 @@ class EncoderNetClassifier(nn.Module):
 		x=self.fc2(x)
 		# x = torch.nn.functional.normalize(x, p=2, dim=1, eps=1e-12)
 		return x
+
+class SiameseNet(nn.Module):
+	def __init__(self,encoder_embeddingsize):
+		super(SiameseNet,self).__init__()
+		self.encoder_embeddingsize=encoder_embeddingsize
+		self.FC=torch.nn.Linear(self.encoder_embeddingsize,2)
+	def forward(self,f1,f2):
+		
+		distance=torch.abs(f1-f2)
+
+		out=self.FC(distance)
+		return out
+
+
 
 
 

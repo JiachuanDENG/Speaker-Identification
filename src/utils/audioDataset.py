@@ -4,7 +4,7 @@ import torchvision
 import torchvision.transforms as transforms
 from .extractFeature import  Feature_Cube
 
-class AudioDataset():
+class AudioDataset4Siamese():
     """Audio dataset."""
 
     def __init__(self, files_path,cube_shape=(40,40,10)):

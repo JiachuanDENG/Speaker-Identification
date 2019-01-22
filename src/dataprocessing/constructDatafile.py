@@ -45,7 +45,7 @@ def samplefiles4speakerclassify(audiodir,f,speakerIds,sampleNum):
 
 
 
-def samplefiles(audiodir,f,speakerIds,sampleNum):
+def samplefiles4Siamese(audiodir,f,speakerIds,sampleNum):
 	genuineSamplesNum=sampleNum//2
 	imposterSamplesNum=sampleNum -  genuineSamplesNum
 	print ('generate genuine pairs...')
@@ -62,7 +62,7 @@ def samplefiles(audiodir,f,speakerIds,sampleNum):
 				file_size = os.path.getsize(wav1)
 
 				# Assertion error.
-			assert riff_size == file_size and os.path.getsize(wav1) > 50000, "Bad file!"
+			assert riff_size == file_size and os.path.getsize(wav1) > 25000, "Bad file!"
 
 		except:
 			print('file %s is corrupted or too short!' % wav1)
@@ -74,7 +74,7 @@ def samplefiles(audiodir,f,speakerIds,sampleNum):
 				file_size = os.path.getsize(wav2)
 
 			# Assertion error.
-			assert riff_size == file_size and os.path.getsize(wav2) > 50000, "Bad file!"
+			assert riff_size == file_size and os.path.getsize(wav2) > 25000, "Bad file!"
 
 		except:
 			print('file %s is corrupted or too short!' % wav2)
@@ -104,7 +104,7 @@ def samplefiles(audiodir,f,speakerIds,sampleNum):
 				file_size = os.path.getsize(wav1)
 
 			# Assertion error.
-			assert riff_size == file_size and os.path.getsize(wav1) > 50000, "Bad file!"
+			assert riff_size == file_size and os.path.getsize(wav1) > 25000, "Bad file!"
 
 		except:
 			print('file %s is corrupted or too short!' % wav1)
@@ -117,7 +117,7 @@ def samplefiles(audiodir,f,speakerIds,sampleNum):
 				file_size = os.path.getsize(wav2)
 
 			# Assertion error.
-			assert riff_size == file_size and os.path.getsize(wav2) > 50000, "Bad file!"
+			assert riff_size == file_size and os.path.getsize(wav2) > 25000, "Bad file!"
 
 		except:
 			print('file %s is corrupted or too short!' % wav2)
@@ -151,10 +151,13 @@ def main(args):
 	valSpeakerIds=[id for id in allspeakerids if id not in trainSpeakerIds]
 
 	f_trainfiles=open('train_file_path.txt','w')
-	f_valfiles=open('val_file_path.txt','w')
+	fsiamese_trainfiles=open('train_siamese_file_path.txt','w')
+	# f_valfiles=open('val_file_path.txt','w')
 	print ('training files...')
 	# samplefiles(audio_dir,f_trainfiles,trainSpeakerIds,trainSampleNum)
 	samplefiles4speakerclassify(audio_dir,f_trainfiles,trainSpeakerIds,trainSampleNum)
+
+	samplefiles4Siamese(audio_dir,fsiamese_trainfiles,trainSpeakerIds,trainSampleNum)
 
 	# print ('val files...')
 
