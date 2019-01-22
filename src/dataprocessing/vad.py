@@ -151,7 +151,7 @@ def main(args):
         #         | ksiudhahi  
         #           | 0.wav
         #     ...    
-    voxdata=argsp[2]
+    voxdata=args[2]
     voxVadData=args[3]#'../../data/voxVadData'
     os.system('mkdir {}'.format(voxVadData))
     sr=int(args[1])

@@ -29,7 +29,7 @@ def samplefiles4speakerclassify(audiodir,f,speakerIds,sampleNum):
 				file_size = os.path.getsize(wav1)
 
 				# Assertion error. 
-			assert riff_size == file_size and os.path.getsize(wav1) > 10000, "Bad file!"
+			assert riff_size == file_size and os.path.getsize(wav1) > 25000, "Bad file!"
 
 		except :
 			# print (wav1)

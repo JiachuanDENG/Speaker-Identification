@@ -100,26 +100,7 @@ def trainIter4speakerClassify(model,loader,loss_func, optimizer, epochNum=EPOCH,
 		torch.save(model.state_dict(),modelSaveFilePath)
 
 
-def trainIter(model,loader,loss_func,optimizer,epochNum=EPOCH,loadModels=False,modelSaveFilePath='./savedmodel.pkl'):
-	if loadModels:
-		model.load_state_dict(torch.load(modelSaveFilePath))
-	for epoch in range(epochNum):
-		print ('*'*10,' EPOCH {} '.format(epoch), '*'*10)
-		for step,(x1,x2,y) in enumerate(loader):
-			bx1,bx2=autograd.Variable(x1),autograd.Variable(x2)
-			by=autograd.Variable(y)
-			output=model(x1,x2)
-			loss=loss_func(output,by)
-			if step%5==0:
-				# print (step)
-				preds=predict(output)
-				# accuracy,recall,f1=perf_measure(y.data.tolist(),preds)
-				accuracy=getaccuracy(y.data.tolist(),preds)
-				print ('step {} loss: {}, accuracy:{}'.format(step,loss.item(),accuracy))
-			optimizer.zero_grad()
-			loss.backward()
-			optimizer.step()
-		torch.save(model.state_dict(),modelSaveFilePath)
+
 def main4speakerClassify():
 	file_path=args.file_path
 	audioDataSet=audioDataset.AudioDataset4speakerClassify(file_path)
@@ -133,18 +114,7 @@ def main4speakerClassify():
 	loss_func=nn.CrossEntropyLoss()
 	trainIter4speakerClassify(encoderNet,loader,loss_func,optimizer,loadModels=True)
 
-def main():
-	file_path=args.file_path
-	audioDataSet=audioDataset.AudioDataset(file_path)
-	loader=Data.DataLoader(
-			dataset=audioDataSet,
-			batch_size=BATCH_SIZE,
-			shuffle=True
-		)
-	siameseNet=models.SiameseNet(64)
-	optimizer=torch.optim.Adam(siameseNet.parameters(),0.001)
-	loss_func=nn.CrossEntropyLoss()
-	trainIter(siameseNet,loader,loss_func,optimizer)
+
 
 if __name__ == '__main__':
 	args=get_arguments(sys.argv[1:])
