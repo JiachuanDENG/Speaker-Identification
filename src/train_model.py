@@ -16,12 +16,11 @@ EPOCH=25
 
 def get_arguments(argv):
 	parser = argparse.ArgumentParser(description='Siamese Net for speaker identification')
-	parser.add_argument('file_path', metavar='FILE_PATH',
-	                    help='path of all training files')
+	# parser.add_argument('file_path', metavar='FILE_PATH',
+	#                     help='path of all training files')
 
-
-	# parser.add_argument('-e', '--n_epochs', type=int, default=100,
-	#                     help='number of epochs (DEFAULT: 100)')
+	parser.add_argument('-m', '--model', type=int, default=0,
+	                    help='0 for classifier, 1 for siamesenet')
 	# parser.add_argument('-l', '--learning_rate', type=float, default=1e-4,
 	#                     help='learning rate for gradient descent (DEFAULT: 1e-4)')
 	# parser.add_argument('-i', '--impl', choices=['torch.nn', 'torch.autograd', 'my'], default='my',
@@ -78,7 +77,7 @@ def getaccuracy(y_actual,y_hat):
 	return acc/len(y_hat)
 
  
-def trainIter4speakerClassify(model,loader,loss_func, optimizer, epochNum=EPOCH, loadModels=False, modelSaveFilePath='./savedEncoder.pkl'):
+def trainIter4speakerClassify(model,loader,loaderVal,loss_func, optimizer, epochNum=EPOCH, loadModels=False, modelSaveFilePath='./savedEncoder.pkl'):
 	if loadModels:
 		print ('loading trained model..')
 		model.load_state_dict(torch.load(modelSaveFilePath))
@@ -87,20 +86,37 @@ def trainIter4speakerClassify(model,loader,loss_func, optimizer, epochNum=EPOCH,
 		for step,(x1,y) in enumerate(loader):
 			bx1=autograd.Variable(x1)
 			by=autograd.Variable(y)
-			output=model(x1)
+			output=model(bx1)
 			loss=loss_func(output,by)
 			if step%5==0:
 				# print (step)
 				preds=predict(output)
+				# print (type(preds))
 				# accuracy,recall,f1=perf_measure(y.data.tolist(),preds)
 				accuracy=getaccuracy(y.data.tolist(),preds)
-				print ('step {} loss: {}, accuracy:{}'.format(step,loss.item(),accuracy))
+
+				val_acc_print=''
+				yvals,predvals=[],[]
+				if step%20==0:
+					for xval,yval in loaderVal:
+						bxval,byval=autograd.Variable(xval),autograd.Variable(yval)
+						outval=model(bxval)
+						predval=predict(outval)
+						predvals+=predval
+						yvals+=yval.data.tolist()
+					valaccuracy=getaccuracy(yvals,predvals)
+					val_acc_print+=', val accuracy:{}'.format(valaccuracy)
+
+
+
+
+				print ('step {} loss: {}, accuracy:{} {}'.format(step,loss.item(),accuracy,val_acc_print))
 			optimizer.zero_grad()
 			loss.backward()
 			optimizer.step()
 		torch.save(model.state_dict(),modelSaveFilePath)
 
-def trainIter4SiameseNet(encoder,siamesenet,loader,\
+def trainIter4SiameseNet(encoder,siamesenet,loader,loaderVal,\
 	loss_func,encoder_optimizer,siames_optimizer,\
 	 epochNum=EPOCH,loadModels=False,\
 	 encoder_init='./savedEncoder.pkl',saved_encoder='./savedEncoder4Siamese.pkl',\
@@ -119,7 +135,7 @@ def trainIter4SiameseNet(encoder,siamesenet,loader,\
 			bx1=autograd.Variable(x1)
 			bx2=autograd.Variable(x2)
 			by=autograd.Variable(y)
-			f1,f2=encoder.getFeature(x1),encoder.getFeature(x2)
+			f1,f2=encoder.getFeature(bx1),encoder.getFeature(bx2)
 			output=siamesenet(f1,f2)
 			loss=loss_func(output,by)
 			if step%5==0:
@@ -127,7 +143,21 @@ def trainIter4SiameseNet(encoder,siamesenet,loader,\
 				preds=predict(output)
 				# accuracy,recall,f1=perf_measure(y.data.tolist(),preds)
 				accuracy=getaccuracy(y.data.tolist(),preds)
-				print ('step {} loss: {}, accuracy:{}'.format(step,loss.item(),accuracy))
+
+				val_acc_print=''
+				yvals,predvals=[],[]
+				if step%50==0:
+					for x1val,x2val,yval in loaderVal:
+						bx1val,bx2val,byval=autograd.Variable(x1val),autograd.Variable(x2val),autograd.Variable(yval)
+						f1val,f2val=encoder.getFeature(bx1val),encoder.getFeature(bx2val)
+						outval=siamesenet(f1val,f2val)
+						predval=predict(outval)
+						predvals+=predval
+						yvals+=yval.data.tolist()
+					valaccuracy=getaccuracy(yvals,predvals)
+					val_acc_print+=', val accuracy:{}'.format(valaccuracy)
+
+				print ('step {} loss: {}, accuracy:{} {}'.format(step,loss.item(),accuracy,val_acc_print))
 			encoder_optimizer.zero_grad()
 			siames_optimizer.zero_grad()
 			loss.backward()
@@ -138,34 +168,44 @@ def trainIter4SiameseNet(encoder,siamesenet,loader,\
 
 
 def main4speakerClassify():
-	file_path=args.file_path
 	config=configparser.ConfigParser()
 	config.read('./model/model_config.ini')
 	embedding_size=int(config.get('ENCODER','embedding_size'))
 	speaker_num=int(config.get('ENCODER','speaker_num'))
 
-	audioDataSet=audioDataset.AudioDataset4speakerClassify(file_path)
-	loader=Data.DataLoader(
-		dataset=audioDataSet,
+	audioDataSetTr=audioDataset.AudioDataset4speakerClassify(classifierTrainFilePath)
+	audioDataSetVal=audioDataset.AudioDataset4speakerClassify(classifierValFilePath)
+	loaderTr=Data.DataLoader(
+		dataset=audioDataSetTr,
+		batch_size=BATCH_SIZE,
+		shuffle=True
+		)
+	loaderVal=Data.DataLoader(
+		dataset=audioDataSetVal,
 		batch_size=BATCH_SIZE,
 		shuffle=True
 		)
 	encoderNet=models.EncoderNetClassifier(embedding_size=embedding_size,speakersNum=speaker_num)
 	optimizer=torch.optim.Adam(encoderNet.parameters(),0.001)
 	loss_func=nn.CrossEntropyLoss()
-	trainIter4speakerClassify(encoderNet,loader,loss_func,optimizer,loadModels=True)
+	trainIter4speakerClassify(encoderNet,loaderTr,loaderVal,loss_func,optimizer,loadModels=True)
 
 def main4Siamese():
-	file_path=args.file_path
+	
 	config=configparser.ConfigParser()
 	config.read('./model/model_config.ini')
 	embedding_size=int(config.get('ENCODER','embedding_size'))
 	speaker_num=int(config.get('ENCODER','speaker_num'))
 	try:
-		audioDataSet=audioDataset.AudioDataset4Siamese(file_path)
-	
+		audioDataSet=audioDataset.AudioDataset4Siamese(siameseFilePath)
+		audioDataSetVal=audioDataset.AudioDataset4Siamese(siameseValFilePath)
 		loader=Data.DataLoader(
 		dataset=audioDataSet,
+		batch_size=BATCH_SIZE,
+		shuffle=True
+		)
+		loaderVal=Data.DataLoader(
+		dataset=audioDataSetVal,
 		batch_size=BATCH_SIZE,
 		shuffle=True
 		)
@@ -177,16 +217,26 @@ def main4Siamese():
 	encoder_optimizer=torch.optim.Adam(encoderNet.parameters(),0.001)
 	siames_optimizer=torch.optim.Adam(siameseNet.parameters(),0.001)
 	loss_func=nn.CrossEntropyLoss()
-	trainIter4SiameseNet(encoderNet,siameseNet,loader,\
+	trainIter4SiameseNet(encoderNet,siameseNet,loader,loaderVal,\
 	loss_func,encoder_optimizer,siames_optimizer,\
-	 loadModels=False)
+	 loadModels=True)
 
 
 
 
 if __name__ == '__main__':
 	args=get_arguments(sys.argv[1:])
-	# main4speakerClassify()
-	main4Siamese()
+	trainconfig=configparser.ConfigParser()
+	trainconfig.read('./trainconfig.ini')
+	classifierTrainFilePath=trainconfig.get('TRAIN','classifierTrainFilePath')
+	classifierValFilePath=trainconfig.get('TRAIN','classifierValFilePath')
+	siameseFilePath=trainconfig.get('TRAIN','siameseFilePath')
+	siameseValFilePath=trainconfig.get('TRAIN','siameseValFilePath')
+	if args.model==0:
+		main4speakerClassify()
+	elif args.model==1:
+		main4Siamese()
+	else:
+		raise NotImplementedError
 
 

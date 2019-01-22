@@ -4,7 +4,7 @@ import random
 import scipy.io.wavfile as wav
 from tqdm import tqdm
 
-def samplefiles4speakerclassify(audiodir,f,speakerIds,sampleNum):
+def samplefiles4speakerclassify(audiodir,f,fval,speakerIds,sampleNum):
 	# speakerIds to int ids
 
 	speakerIds2Idx={}
@@ -14,8 +14,13 @@ def samplefiles4speakerclassify(audiodir,f,speakerIds,sampleNum):
 			speakerIds2Idx[speakerid]=idx
 			idx+=1
 
+	alreadyPickedfiles=set()
+	trainSampleNum=int(sampleNum*0.8)
+	valSampleNum=sampleNum - trainSampleNum
+
 	i=0
-	while i < sampleNum:
+	
+	while i < trainSampleNum:
 		# sample a speaker
 		speakerid=random.choice(speakerIds)
 		speakeridx=speakerIds2Idx[speakerid]
@@ -27,7 +32,6 @@ def samplefiles4speakerclassify(audiodir,f,speakerIds,sampleNum):
 			with open(wav1, 'rb') as f1:
 				riff_size, _ = wav._read_riff_chunk(f1)
 				file_size = os.path.getsize(wav1)
-
 				# Assertion error. 
 			assert riff_size == file_size and os.path.getsize(wav1) > 25000, "Bad file!"
 
@@ -35,11 +39,42 @@ def samplefiles4speakerclassify(audiodir,f,speakerIds,sampleNum):
 			# print (wav1)
 			print('file %s is corrupted or too short!' % wav1)
 			continue
-
-
+		alreadyPickedfiles.add(wav1)
 		f.write('{} {}\n'.format(wav1,speakeridx))
 		i+=1
+
+	alreadyPickedVal=set()
+	i=0
+	while i<valSampleNum:
+		# sample a speaker
+		speakerid=random.choice(speakerIds)
+		speakeridx=speakerIds2Idx[speakerid]
+		speakerpath=os.path.join(audiodir,speakerid)
+		# sample two wavfile from same speaker
+		wav1=random.choice([os.path.join(speakerpath,wavfile ) for wavfile in os.listdir(speakerpath) if '.wav' in wavfile ])
+		if wav1 in alreadyPickedVal:
+			continue
+		if wav1 in alreadyPickedfiles:
+			continue
+		try:
+			with open(wav1, 'rb') as f1:
+				riff_size, _ = wav._read_riff_chunk(f1)
+				file_size = os.path.getsize(wav1)
+				# Assertion error. 
+			assert riff_size == file_size and os.path.getsize(wav1) > 25000, "Bad file!"
+
+		except :
+			# print (wav1)
+			print('file %s is corrupted or too short!' % wav1)
+			continue
+		alreadyPickedVal.add(wav1)
+		fval.write('{} {}\n'.format(wav1,speakeridx))
+		i+=1
+
 	print ('number of speakers: {}'.format(len(speakerIds)))
+
+	f.close()
+	fval.close()
 
 
 
@@ -152,17 +187,17 @@ def main(args):
 
 	f_trainfiles=open('train_file_path.txt','w')
 	fsiamese_trainfiles=open('train_siamese_file_path.txt','w')
-	# f_valfiles=open('val_file_path.txt','w')
+	f_valfiles=open('val_file_path.txt','w')
+	fsiamese_Evalfiles=open('eval_siamese_file_path.txt','w')
 	print ('training files...')
 	# samplefiles(audio_dir,f_trainfiles,trainSpeakerIds,trainSampleNum)
-	samplefiles4speakerclassify(audio_dir,f_trainfiles,trainSpeakerIds,trainSampleNum)
+	samplefiles4speakerclassify(audio_dir,f_trainfiles,f_valfiles,trainSpeakerIds,trainSampleNum)
 
 	samplefiles4Siamese(audio_dir,fsiamese_trainfiles,trainSpeakerIds,trainSampleNum)
 
-	# print ('val files...')
+	print ('eval files...')
 
-	# samplefiles4speakerclassify(audio_dir,f_valfiles,valSpeakerIds,valSampleNum)
-	# samplefiles(audio_dir,f_valfiles,valSpeakerIds,valSampleNum)
+	samplefiles4Siamese(audio_dir,fsiamese_Evalfiles,valSpeakerIds,valSampleNum)
 		
 
 
