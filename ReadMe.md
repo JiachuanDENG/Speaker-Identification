@@ -41,9 +41,13 @@ The script will result in several audio chunks saved under ```/data/voxVadData``
 
 #### 1. train model
 under ```Speaker-Identification``` directory, do:
+i. for train classifier encoder model:
 ``` bash
-python3 trainModel.py <train_file_path.txt's path>
+python3 trainModel.py -m 0 
 ```
 
-
+ii. for train siamesenet model:
+``` bash
+python3 trainModel.py -m 1
+```
 
