@@ -95,9 +95,10 @@ def trainIter4speakerClassify(model,loader,loaderVal,loss_func, optimizer, epoch
 				# accuracy,recall,f1=perf_measure(y.data.tolist(),preds)
 				accuracy=getaccuracy(y.data.tolist(),preds)
 
+				# print out validation accuracy every 50 steps
 				val_acc_print=''
 				yvals,predvals=[],[]
-				if step%20==0:
+				if step%50==0:
 					for xval,yval in loaderVal:
 						bxval,byval=autograd.Variable(xval),autograd.Variable(yval)
 						outval=model(bxval)
@@ -107,14 +108,12 @@ def trainIter4speakerClassify(model,loader,loaderVal,loss_func, optimizer, epoch
 					valaccuracy=getaccuracy(yvals,predvals)
 					val_acc_print+=', val accuracy:{}'.format(valaccuracy)
 
-
-
-
 				print ('step {} loss: {}, accuracy:{} {}'.format(step,loss.item(),accuracy,val_acc_print))
 			optimizer.zero_grad()
 			loss.backward()
 			optimizer.step()
 		torch.save(model.state_dict(),modelSaveFilePath)
+
 
 def trainIter4SiameseNet(encoder,siamesenet,loader,loaderVal,\
 	loss_func,encoder_optimizer,siames_optimizer,\
@@ -219,7 +218,7 @@ def main4Siamese():
 	loss_func=nn.CrossEntropyLoss()
 	trainIter4SiameseNet(encoderNet,siameseNet,loader,loaderVal,\
 	loss_func,encoder_optimizer,siames_optimizer,\
-	 loadModels=True)
+	 loadModels=False)
 
 
 

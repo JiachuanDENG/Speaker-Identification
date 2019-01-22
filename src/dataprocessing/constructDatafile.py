@@ -27,7 +27,8 @@ def samplefiles4speakerclassify(audiodir,f,fval,speakerIds,sampleNum):
 		speakerpath=os.path.join(audiodir,speakerid)
 		# sample two wavfile from same speaker
 		wav1=random.choice([os.path.join(speakerpath,wavfile ) for wavfile in os.listdir(speakerpath) if '.wav' in wavfile ])
-
+		if wav1 in alreadyPickedfiles:
+			continue
 		try:
 			with open(wav1, 'rb') as f1:
 				riff_size, _ = wav._read_riff_chunk(f1)
