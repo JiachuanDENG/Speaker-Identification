@@ -3,6 +3,7 @@ import sys
 import random
 import scipy.io.wavfile as wav
 from tqdm import tqdm
+import soundfile as sf
 
 def samplefiles4speakerclassify(audiodir,f,fval,speakerIds,sampleNum):
 	# speakerIds to int ids
@@ -30,11 +31,9 @@ def samplefiles4speakerclassify(audiodir,f,fval,speakerIds,sampleNum):
 		if wav1 in alreadyPickedfiles:
 			continue
 		try:
-			with open(wav1, 'rb') as f1:
-				riff_size, _ = wav._read_riff_chunk(f1)
-				file_size = os.path.getsize(wav1)
-				# Assertion error. 
-			assert riff_size == file_size and os.path.getsize(wav1) > 25000, "Bad file!"
+			signal, fs = sf.read(wav1)
+
+			assert signal.shape[0]>=fs*1.0, 'wavfile too short, wavfile length:{}'.format(signal.shape[0])
 
 		except :
 			# print (wav1)
@@ -58,11 +57,9 @@ def samplefiles4speakerclassify(audiodir,f,fval,speakerIds,sampleNum):
 		if wav1 in alreadyPickedfiles:
 			continue
 		try:
-			with open(wav1, 'rb') as f1:
-				riff_size, _ = wav._read_riff_chunk(f1)
-				file_size = os.path.getsize(wav1)
-				# Assertion error. 
-			assert riff_size == file_size and os.path.getsize(wav1) > 25000, "Bad file!"
+			signal, fs = sf.read(wav1)
+
+			assert signal.shape[0]>=fs*1.0, 'wavfile too short, wavfile length:{}'.format(signal.shape[0])
 
 		except :
 			# print (wav1)
@@ -93,24 +90,18 @@ def samplefiles4Siamese(audiodir,f,speakerIds,sampleNum):
 		# sample two wavfile from same speaker
 		wav1,wav2=random.sample([os.path.join(speakerpath,wavfile ) for wavfile in os.listdir(speakerpath) if '.wav' in wavfile ],2)
 		try:
-			with open(wav1, 'rb') as f1:
-				riff_size, _ = wav._read_riff_chunk(f1)
-				file_size = os.path.getsize(wav1)
+			signal, fs = sf.read(wav1)
 
-				# Assertion error.
-			assert riff_size == file_size and os.path.getsize(wav1) > 25000, "Bad file!"
+			assert signal.shape[0]>=fs*1.0, 'wavfile too short, wavfile length:{}'.format(signal.shape[0])
 
 		except:
 			print('file %s is corrupted or too short!' % wav1)
 			continue
 
 		try:
-			with open(wav2, 'rb') as f2:
-				riff_size, _ = wav._read_riff_chunk(f2)
-				file_size = os.path.getsize(wav2)
+			signal, fs = sf.read(wav2)
 
-			# Assertion error.
-			assert riff_size == file_size and os.path.getsize(wav2) > 25000, "Bad file!"
+			assert signal.shape[0]>=fs*1.0, 'wavfile too short, wavfile length:{}'.format(signal.shape[0])
 
 		except:
 			print('file %s is corrupted or too short!' % wav2)
@@ -135,12 +126,9 @@ def samplefiles4Siamese(audiodir,f,speakerIds,sampleNum):
 		wav1=random.choice([os.path.join(onespeakerPath,wavfile)for wavfile in os.listdir(onespeakerPath) if '.wav' in wavfile])
 		wav2=random.choice([os.path.join(antspeakerPath,wavfile) for wavfile in os.listdir(antspeakerPath) if '.wav' in wavfile])
 		try:
-			with open(wav1, 'rb') as f1:
-				riff_size, _ = wav._read_riff_chunk(f1)
-				file_size = os.path.getsize(wav1)
+			signal, fs = sf.read(wav1)
 
-			# Assertion error.
-			assert riff_size == file_size and os.path.getsize(wav1) > 25000, "Bad file!"
+			assert signal.shape[0]>=fs*1.0, 'wavfile too short, wavfile length:{}'.format(signal.shape[0])
 
 		except:
 			print('file %s is corrupted or too short!' % wav1)
@@ -148,12 +136,9 @@ def samplefiles4Siamese(audiodir,f,speakerIds,sampleNum):
 
   
 		try:
-			with open(wav2, 'rb') as f2:
-				riff_size, _ = wav._read_riff_chunk(f2)
-				file_size = os.path.getsize(wav2)
+			signal, fs = sf.read(wav2)
 
-			# Assertion error.
-			assert riff_size == file_size and os.path.getsize(wav2) > 25000, "Bad file!"
+			assert signal.shape[0]>=fs*1.0, 'wavfile too short, wavfile length:{}'.format(signal.shape[0])
 
 		except:
 			print('file %s is corrupted or too short!' % wav2)

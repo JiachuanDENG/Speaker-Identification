@@ -2,7 +2,8 @@ import speechpy
 import numpy as np
 # import scipy.io.wavfile as wav
 import soundfile as sf
-
+import random
+import math
 
 class Feature_Cube(object):
     """Return a feature cube of desired size.
@@ -62,3 +63,79 @@ class Feature_Cube(object):
 
         # return {'feature': feature_cube, 'label': label}
         return feature_cube[None,:,:,:]
+
+class Feature_CubeV2(object):
+    """
+    feature cube class for extract log energy + 1st logenergy + 2nd logenergy
+
+    """
+
+    def __init__(self,num_coefficient=40):
+        self.num_coefficient=num_coefficient
+
+    def pad_zeros(self,sig,frame_sample_length,frame_stride,fs):
+        # sig [N,]
+        # frame_sample_length,frame_stride in second
+        # fs: sample rate
+        length_signal=sig.shape[0]
+        frame_sample_length=frame_sample_length*fs
+        frame_stride=frame_stride*fs
+        numframes = (int(math.ceil((length_signal
+                                              - frame_sample_length) / frame_stride)))
+    #     print(numframes,length_signal,frame_sample_length,frame_stride)
+
+        # Zero padding
+        len_sig = int(numframes * frame_stride + frame_sample_length)
+        additive_zeros = np.zeros((len_sig - length_signal,))
+    #     print (additive_zeros.shape)
+        signal = np.concatenate((sig, additive_zeros))
+        return signal
+
+    def logenergy_feature(self,wavfile):
+        # Get the sound file path
+        sound_file_path = wavfile
+
+        ##############################
+        ### Reading and processing ###
+        ##############################
+
+
+
+        signal, fs = sf.read(sound_file_path)
+    #     print (fs)
+        assert signal.shape[0]>=fs*1.0, 'wavfile too short, wavfile length:{}'.format(signal.shape[0])
+        # dynamic start point
+        # startpoint=random.randint(0,signal.shape[0]-fs)
+        startpoint=0
+        signal=signal[startpoint:startpoint+fs] # sample an 1 second serise
+
+        ###########################
+        ### Feature Extraction ####
+        ###########################
+        frame_length=0.025
+        frame_stride=0.01
+        signal=self.pad_zeros(signal,frame_length,frame_stride,fs)
+        logenergy = speechpy.feature.lmfe(signal, sampling_frequency=fs, frame_length=frame_length, frame_stride=frame_stride,
+                                          num_filters=self.num_coefficient, fft_length=512, low_frequency=0, high_frequency=None)
+        return logenergy
+
+    def getfeature(self,wavfile):
+
+        logenergy=self.logenergy_feature(wavfile)
+
+        firstOrder=speechpy.processing.derivative_extraction(logenergy, DeltaWindows=9)
+        secondOrder=speechpy.processing.derivative_extraction(firstOrder, DeltaWindows=9)
+        
+        feat=np.concatenate([logenergy[None,:,:],firstOrder[None,:,:],secondOrder[None,:,:]],axis=0)
+
+        return feat.astype('float32')
+
+
+
+
+
+
+
+
+
+

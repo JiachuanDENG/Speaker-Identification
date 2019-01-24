@@ -6,7 +6,27 @@ import os
 from pydub import AudioSegment
 import webrtcvad
 from tqdm import tqdm
+from pydub import AudioSegment
 
+def segmentwav(AUDIO_FILE,segLen=1000,stride=0.25):
+    sound = AudioSegment.from_file(AUDIO_FILE)
+    if len(sound)<segLen:
+        print ('wav too short')
+        os.system('rm {}'.format(AUDIO_FILE))
+        return
+    basename=os.path.basename(AUDIO_FILE).split('.')[0]
+    dirname=os.path.dirname(AUDIO_FILE)
+    strideLen=int(stride*segLen)
+    startpoint=0
+    segNum=0
+    while startpoint<len(sound)-segLen:
+        seg=sound[startpoint:startpoint+segLen] 
+        startpoint+=strideLen
+        segNum+=1
+        segpath=os.path.join(dirname,'{}_seg{}.wav'.format(basename,segNum))
+        seg.export(segpath,format='wav')
+
+    os.system('rm {}'.format(AUDIO_FILE))
 
 def read_wave(path):
     """Reads a .wav file.
@@ -158,6 +178,7 @@ def main(args):
     for idDir in tqdm(os.listdir(voxdata)):
         idChunkDir=os.path.join(voxVadData,idDir)
         os.system('mkdir {}'.format(idChunkDir))
+        idchunkNum=0
         if 'id' in idDir:
             for subdir in os.listdir(os.path.join(voxdata,idDir)):
                 if '.DS_Store' not in subdir:
@@ -171,9 +192,9 @@ def main(args):
                             frames = list(frames)
                             segments = vad_collector(sample_rate, 30, 300, vad, frames)
                             for i, segment in enumerate(segments):
-                                chunkNum=len(os.listdir(idChunkDir))
-                                path = os.path.join(idChunkDir,'chunk_{}.wav'.format(chunkNum))
-                                resamplepath=os.path.join(idChunkDir,'chunk_{}_r.wav'.format(chunkNum))
+                                idchunkNum+=1
+                                path = os.path.join(idChunkDir,'chunk_{}.wav'.format(idchunkNum))
+                                resamplepath=os.path.join(idChunkDir,'chunk_{}_r.wav'.format(idchunkNum))
                                
                                 # print(' Writing %s' % (path,))
                                 # write to path
@@ -182,6 +203,9 @@ def main(args):
                                 os.system('sox {} {} channels 1 rate {}'.format(path,resamplepath,sr))
                                 # delete original chunk wav
                                 os.system('rm {}'.format(path))
+
+                                segmentwav(resamplepath,1000*1.0,0.25)
+                                
 
 
 

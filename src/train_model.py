@@ -187,7 +187,7 @@ def main4speakerClassify():
 	encoderNet=models.EncoderNetClassifier(embedding_size=embedding_size,speakersNum=speaker_num)
 	optimizer=torch.optim.Adam(encoderNet.parameters(),0.001)
 	loss_func=nn.CrossEntropyLoss()
-	trainIter4speakerClassify(encoderNet,loaderTr,loaderVal,loss_func,optimizer,loadModels=True)
+	trainIter4speakerClassify(encoderNet,loaderTr,loaderVal,loss_func,optimizer,loadModels=False)
 
 def main4Siamese():
 	
